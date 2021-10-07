@@ -1,0 +1,54 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Gather information about local content library
+      vmware.vmware_rest.content_locallibrary_info:
+      register: library_info
+
+    - name: Set Local library id
+      set_fact:
+        content_library_id: '{{ (library_info.value|selectattr("name", "equalto", locallibrary_name)|first).id }}'
+
+    - name: Get the list of items of the local content library
+      vmware.vmware_rest.content_library_item_info:
+        library_id: '{{ content_library_id }}'
+      register: library_items
+
+    - name: Get content item id
+      set_fact:
+        content_library_item_id: '{{ (library_items.value|selectattr("name", "equalto", content_library_item)|first).id }}' 
+
+    - name: Get Cluster info
+      vmware.vmware_rest.vcenter_cluster_info:
+        filter_names:
+        - "{{ cluster_name }}"
+      register: cluster_info
+
+    - name: Get Resource info for {{ cluster_name }}
+      vmware.vmware_rest.vcenter_cluster_info:
+        cluster: "{{ cluster_info.value[0].cluster }}"
+      register: resource_pool_info
+
+    - name: Get folder info
+      vmware.vmware_rest.vcenter_folder_info:
+        filter_names:
+        - '{{ folder_path }}'
+      register: folder_info
+
+    - set_fact:
+        folder_id: '{{ folder_info.value[0].folder }}'
+        resource_pool_id: '{{ resource_pool_info.value.resource_pool }}'
+
+    - name: Create a new VM from the OVF
+      vmware.vmware_rest.vcenter_ovf_libraryitem:
+        ovf_library_item_id: '{{ content_library_item_id }}'
+        state: deploy
+        target:
+          resource_pool_id: "{{ resource_pool_id }}"
+          folder_id: "{{ folder_id }}"
+        deployment_spec:
+          name: "{{ dest_vm_name }}"
+          accept_all_EULA: true

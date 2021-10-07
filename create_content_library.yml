@@ -1,0 +1,27 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Get datastore info
+      vmware.vmware_rest.vcenter_datastore_info:
+        filter_names:
+        - "{{ datastore_name }}"
+      register: datastore_info
+
+    - name: Set datastore id
+      set_fact:
+        datastore_id: '{{ datastore_info.value[0].datastore }}'
+
+    - name: Create a local content library
+      vmware.vmware_rest.content_locallibrary:
+        name: "{{ locallibrary_name }}"
+        description: automated
+        publish_info:
+          published: true
+          authentication_method: NONE
+        storage_backings:
+        - datastore_id: "{{ datastore_id }}"
+          type: DATASTORE
+        state: present

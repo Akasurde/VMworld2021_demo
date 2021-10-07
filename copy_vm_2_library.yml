@@ -1,0 +1,34 @@
+---
+- hosts: localhost
+  gather_facts: no
+  vars_files:
+    - vars.yml
+  tasks:
+    - name: Gather information about local content library
+      vmware.vmware_rest.content_locallibrary_info:
+      register: library_info
+
+    - name: Set Local library id
+      set_fact:
+        content_library_item_id: '{{ (library_info.value|selectattr("name", "equalto", locallibrary_name)|first).id }}'
+
+    - name: Get source virtual machine info
+      vmware.vmware_rest.vcenter_vm_info:
+        filter_names:
+        - '{{ src_vm_name }}'
+      register: vm_info
+
+    - name: Export the VM as an OVF on the library
+      vmware.vmware_rest.vcenter_ovf_libraryitem:
+        source:
+          type: VirtualMachine
+          id: '{{ vm_info.value[0].vm }}'
+        target:
+          library_id: '{{ content_library_item_id }}'
+        create_spec:
+          name: "{{ content_library_item }}"
+          description: A Golden image for CentOS 8
+          flags: []
+        state: present
+      register: ovf_item
+      when: content_library_item_id is defined

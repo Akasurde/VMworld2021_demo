@@ -1,0 +1,11 @@
+---
+datacenter_name: 'Asia-Datacenter1'
+cluster_name: 'Asia-Cluster1'
+datastore_name: 'ds_200'
+datastore_path: '/Asia-Datacenter1/datastore/ds_200'
+folder_path: 'Prod'
+rp_path: '/Asia-Datacenter1/host/Asia-Cluster1/'
+src_vm_name: RHEL_8
+dest_vm_name: RHEL_8_WebServer
+locallibrary_name: 'vmworld_library'
+content_library_item: "golden_template"
